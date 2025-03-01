@@ -95,77 +95,53 @@ impl TestSuite {
         self.log(&format!("✓ {}", step_name));
     }
 
-    pub async fn run(&mut self) -> Result<TestResult, TestError> {
-        self.log("Starting Borrower CLI Test Suite");
-        
-        // Step 1: Generate mnemonic and addresses
-        self.step1_generate_credentials()?;
-        
-        // Step 2: Call testnet faucet
-        self.step2_call_faucet().await?;
-        
-
-        
-        // Step 3: Check CLI
-        self.step3_check_cli()?;
-        
-        // Step 4: Create a loan with retry logic
-        let mut loan_created = false;
-        for attempt in 1..=3 {
-            self.log(&format!("Loan creation attempt {}/3", attempt));
-            
-            match self.step4_create_loan() {
-                Ok(_) => {
-                    loan_created = true;
-                    break;
-                },
-                Err(e) => {
-                    if attempt < 3 {
-                        self.log(&format!("Loan creation failed: {}. Retrying in 30 seconds...", e));
-                        tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
-                    } else {
-                        return Err(e);
-                    }
-                }
-            }
-        }
-        
-        if !loan_created {
-            return Err(TestError::Process("Failed to create loan after multiple attempts".to_string()));
-        }
-        
-        // Step 5: Capture contract-id (done in step 4)
-        
-        // Step 6: Repay the loan
-        self.step6_repay_loan()?;
-        
-        // Step 7: Get contract details
-        self.step7_get_contract_details()?;
-        
-        // Step 8 & 9: Check the JSON file
-        let success = self.step8_check_json()?;
-        
-        // Create test result
-        let result = TestResult {
-            id: Uuid::new_v4().to_string(),
-            success,
-            details: if success {
-                "Test completed successfully".to_string()
-            } else {
-                "Test failed - loan is not closed with repayment".to_string()
-            },
-            mnemonic: self.mnemonic.clone(),
-            btc_address: self.btc_address.clone(),
-            lava_pubkey: self.lava_pubkey.clone(),
-            contract_id: self.contract_id.clone(),
-            steps_completed: self.steps_completed.clone(),
-            logs: self.logs.clone(),
-            timestamp: Utc::now(),
-        };
-        
-        Ok(result)
-    }
-
+pub async fn run(&mut self) -> Result<TestResult, TestError> {
+    self.log("Starting Borrower CLI Test Suite");
+    
+    // Step 1: Generate mnemonic and addresses
+    self.step1_generate_credentials()?;
+    
+    // Step 2: Call testnet faucet
+    self.step2_call_faucet().await?;
+    
+    // Step 3: Check CLI
+    self.step3_check_cli()?;
+    
+    // Step 4: Create a loan (no retry logic)
+    self.log("Creating a loan");
+    self.step4_create_loan()?;
+    
+    // Step 5: Capture contract-id (done in step 4)
+    
+    // Step 6: Repay the loan
+    self.step6_repay_loan()?;
+    
+    // Step 7: Get contract details
+    self.step7_get_contract_details()?;
+    
+    // Step 8 & 9: Check the JSON file
+    let success = self.step8_check_json()?;
+    
+    // Create test result
+    let result = TestResult {
+        id: Uuid::new_v4().to_string(),
+        success,
+        details: if success {
+            "Test completed successfully".to_string()
+        } else {
+            "Test failed - loan is not closed with repayment".to_string()
+        },
+        mnemonic: self.mnemonic.clone(),
+        btc_address: self.btc_address.clone(),
+        lava_pubkey: self.lava_pubkey.clone(),
+        contract_id: self.contract_id.clone(),
+        steps_completed: self.steps_completed.clone(),
+        logs: self.logs.clone(),
+        timestamp: Utc::now(),
+    };
+    
+    Ok(result)
+}
     // Helper method to log commands before execution
     fn log_command(&mut self, cmd: &Command) -> Result<(), TestError> {
         // Attempt to reconstruct the command as it would be executed in shell
@@ -380,15 +356,24 @@ impl TestSuite {
         
         // Step 5: Extract contract-id using regex
         self.log("Step 5: Capturing contract-id");
-        
-        let re = Regex::new(r"contract-id: ([a-zA-Z0-9]+)").unwrap();
-        if let Some(captures) = re.captures(&stdout) {
-            let id = captures.get(1).unwrap().as_str().to_string();
+
+        self.log(&format!("Searching for contract ID in output. Length: {}", stdout.len()));
+        // Search for contract ID in both stdout and stderr
+let re = Regex::new(r"New contract ID: ([a-zA-Z0-9]+)").unwrap();
+
+// Try to find in stdout first
+let contract_id_opt = re.captures(&stdout)
+    .or_else(|| re.captures(&stderr)) // If not found in stdout, try stderr
+    .map(|captures| captures.get(1).unwrap().as_str().to_string());
+
+        if let Some(id) = contract_id_opt {
             self.log(&format!("Captured contract-id: {}", id));
             self.contract_id = Some(id);
             self.add_step("Step 5: Captured contract-id");
         } else {
-            return Err(TestError::Parsing("Failed to extract contract-id".to_string()));
+            self.log(&format!("Searching for contract ID in stdout. Length: {}", stdout.len()));
+            self.log(&format!("Searching for contract ID in stderr. Length: {}", stderr.len()));
+            return Err(TestError::Parsing("Failed to extract contract-id from stdout or stderr".to_string()));
         }
         
         self.add_step("Step 4: Created a new loan");
@@ -458,7 +443,7 @@ impl TestSuite {
             .arg("get-contract")
             .arg("--contract-id")
             .arg(contract_id)
-            .arg("--disable-contracts-backup")
+            // .arg("--disable-contracts-backup")
             .arg("--verbose")
             .arg("--output-file")
             .arg(&json_file)
