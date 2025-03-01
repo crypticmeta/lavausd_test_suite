@@ -1,0 +1,38 @@
+[package]
+name = "borrower-cli-tester"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Web server
+actix-web = "4.3.1"
+actix-rt = "2.8.0"
+
+# Utilities
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.3", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+regex = "1.8"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+ed25519-dalek = "1.0.1"
+hmac = "0.12.1"
+sha2 = "0.10.6"
+
+# Bitcoin and crypto tools
+bip39 = "2.0.0"  # This version uses parse_in_normalized instead of from_phrase
+bitcoin = "0.30" # This version has updated module structure
+bs58 = "0.5.0"
+rand = "0.8"
+
+# Database
+rusqlite = { version = "0.29", features = ["bundled", "chrono"] }
+
+# Logging
+log = "0.4"
+env_logger = "0.10"
+
+# Make sure to install openssl dev packages
+# sudo apt-get install pkg-config libssl-dev

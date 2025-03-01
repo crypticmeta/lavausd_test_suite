@@ -1,0 +1,17 @@
+version: "3.8"
+
+services:
+  borrower-cli-tester:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: borrower-cli-tester
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/test_results.db
+      - HOST=0.0.0.0
+      - PORT=8080
+    restart: unless-stopped
