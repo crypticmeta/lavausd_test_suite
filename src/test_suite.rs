@@ -75,6 +75,21 @@ impl TestSuite {
         }
     }
 
+      fn create_result(&self, success: bool, details: String) -> TestResult {
+        TestResult {
+            id: Uuid::new_v4().to_string(),
+            success,
+            details,
+            mnemonic: self.mnemonic.clone(),
+            btc_address: self.btc_address.clone(),
+            lava_pubkey: self.lava_pubkey.clone(),
+            contract_id: self.contract_id.clone(),
+            steps_completed: self.steps_completed.clone(),
+            logs: self.logs.clone(),
+            timestamp: Utc::now(),
+        }
+    }
+
  
 
     // Method to set a predefined mnemonic
@@ -95,54 +110,79 @@ impl TestSuite {
         self.log(&format!("✓ {}", step_name));
     }
 
-pub async fn run(&mut self) -> Result<TestResult, TestError> {
+
+ pub async fn run(&mut self) -> TestResult {
     self.log("Starting Borrower CLI Test Suite");
     
     // Step 1: Generate mnemonic and addresses
-    self.step1_generate_credentials()?;
+    if let Err(e) = self.step1_generate_credentials() {
+        self.log(&format!("Error in step 1: {}", e));
+        return self.create_result(false, format!("Error in step 1: {}", e));
+    }
+    
     
     // Step 2: Call testnet faucet
-    self.step2_call_faucet().await?;
+    if let Err(e) = self.step2_call_faucet().await {
+        self.log(&format!("Error in step 2: {}", e));
+        return self.create_result(false, format!("Error in step 2: {}", e));
+    }
+    
     
     // Step 3: Check CLI
-    self.step3_check_cli()?;
+    if let Err(e) = self.step3_check_cli() {
+        self.log(&format!("Error in step 3: {}", e));
+        return self.create_result(false, format!("Error in step 3: {}", e));
+    }
     
-    // Step 4: Create a loan (no retry logic)
+    
+    // Step 4: Create a loan
     self.log("Creating a loan");
-    self.step4_create_loan()?;
+    if let Err(e) = self.step4_create_loan() {
+        self.log(&format!("Error in step 4: {}", e));
+        return self.create_result(false, format!("Error in step 4: {}", e));
+    }
     
-    // Step 5: Capture contract-id (done in step 4)
+    self.log("Waiting 1 minutes before proceeding to the next step...");
+    tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
     
     // Step 6: Repay the loan
-    self.step6_repay_loan()?;
+    if let Err(e) = self.step6_repay_loan() {
+        self.log(&format!("Error in step 6: {}", e));
+        return self.create_result(false, format!("Error in step 6: {}", e));
+    }
+    
+    self.log("Waiting 1 minutes before proceeding to the next step...");
+    tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
     
     // Step 7: Get contract details
-    self.step7_get_contract_details()?;
+    if let Err(e) = self.step7_get_contract_details() {
+        self.log(&format!("Error in step 7: {}", e));
+        return self.create_result(false, format!("Error in step 7: {}", e));
+    }
     
-    // Step 8 & 9: Check the JSON file
-    let success = self.step8_check_json()?;
     
-    // Create test result
-    let result = TestResult {
-        id: Uuid::new_v4().to_string(),
+    // Step 8 
+    let success = match self.step8_check_json() {
+        Ok(success) => success,
+        Err(e) => {
+            self.log(&format!("Error in step 8: {}", e));
+            return self.create_result(false, format!("Error in step 8: {}", e));
+        }
+    };
+    
+    // Create final test result
+    self.create_result(
         success,
-        details: if success {
+        if success {
             "Test completed successfully".to_string()
         } else {
             "Test failed - loan is not closed with repayment".to_string()
-        },
-        mnemonic: self.mnemonic.clone(),
-        btc_address: self.btc_address.clone(),
-        lava_pubkey: self.lava_pubkey.clone(),
-        contract_id: self.contract_id.clone(),
-        steps_completed: self.steps_completed.clone(),
-        logs: self.logs.clone(),
-        timestamp: Utc::now(),
-    };
-    
-    Ok(result)
+        }
+    )
 }
-    // Helper method to log commands before execution
+
+
+// Helper method to log commands before execution
     fn log_command(&mut self, cmd: &Command) -> Result<(), TestError> {
         // Attempt to reconstruct the command as it would be executed in shell
         let program = cmd.get_program().to_string_lossy();
@@ -465,46 +505,86 @@ let contract_id_opt = re.captures(&stdout)
         Ok(())
     }
 
-    fn step8_check_json(&mut self) -> Result<bool, TestError> {
-        self.log("Step 8: Checking JSON file for closed status");
-        
-        let contract_id = match &self.contract_id {
-            Some(id) => id,
-            None => return Err(TestError::Parsing("Missing contract-id".to_string())),
-        };
-        
-        let json_file = format!("{}.json", contract_id);
-        
-        if !Path::new(&json_file).exists() {
-            return Err(TestError::Io(format!("JSON file not found: {}", json_file)));
-        }
-        
-        let content = fs::read_to_string(&json_file)?;
-        self.log(&format!("JSON content: {}", content));
-        
-        let json: Value = serde_json::from_str(&content)
-            .map_err(|e| TestError::Parsing(format!("Failed to parse JSON: {}", e)))?;
-        
-        // Step 9: Check if loan is closed with repayment
-        self.log("Step 9: Verifying loan is closed with repayment");
-        
-        let is_closed = json.get("Closed").is_some();
-        let has_repayment = if let Some(outcome) = json.pointer("/outcome/repayment") {
-            outcome.get("collateral_repayment_txid").is_some()
-        } else {
-            false
-        };
-        
-        if is_closed && has_repayment {
-            self.log("Loan is closed with repayment - TEST PASSED");
-            self.add_step("Step 9: Verified loan is closed with repayment");
-            Ok(true)
-        } else {
-            self.log("Loan is not closed with repayment - TEST FAILED");
-            Ok(false)
-        }
-    }
+ 
+fn step8_check_json(&mut self) -> Result<bool, TestError> {
+    self.log("Step 8: Checking JSON file for closed status");
+    
 
+    let contract_id = match &self.contract_id {
+        Some(id) => id,
+        None => return Err(TestError::Parsing("Missing contract-id".to_string())),
+    };
+    
+
+    
+    let json_file = format!("{}.json", contract_id);
+    
+    if !Path::new(&json_file).exists() {
+        return Err(TestError::Io(format!("JSON file not found: {}", json_file)));
+    }
+    
+    let content = fs::read_to_string(&json_file)?;
+    
+    // Add more detailed logging
+    self.log("JSON content loading successful");
+    self.log(&format!("JSON content length: {} bytes", content.len()));
+    self.log("First 100 characters of JSON: ");
+    if content.len() > 100 {
+        self.log(&content[0..100]);
+    } else {
+        self.log(&content);
+    }
+    
+    let json: Value = serde_json::from_str(&content)
+        .map_err(|e| TestError::Parsing(format!("Failed to parse JSON: {}", e)))?;
+    
+    // Step 9: Check if loan is closed with repayment
+    self.log("Step 9: Verifying loan is closed with repayment");
+    
+    let is_closed = json.get("Closed").is_some();
+    self.log(&format!("Is Closed object present: {}", is_closed));
+    
+    // Look for outcome/repayment inside the Closed object
+    let has_repayment = if let Some(closed) = json.get("Closed") {
+        self.log("Found 'Closed' object in JSON");
+        
+        if let Some(outcome) = closed.get("outcome") {
+            self.log("Found 'outcome' object in Closed");
+            
+            if let Some(repayment) = outcome.get("repayment") {
+                self.log("Found 'repayment' object in outcome");
+                
+                let has_txid = repayment.get("collateral_repayment_txid").is_some();
+                self.log(&format!("Has collateral_repayment_txid: {}", has_txid));
+                has_txid
+            } else {
+                self.log("No 'repayment' object found in outcome");
+                false
+            }
+        } else {
+            self.log("No 'outcome' object found in Closed");
+            false
+        }
+    } else {
+        self.log("No 'Closed' object found in JSON");
+        false
+    };
+    
+    // Try the pointer approach too
+    let pointer_result = json.pointer("/Closed/outcome/repayment/collateral_repayment_txid").is_some();
+    self.log(&format!("JSON pointer check result: {}", pointer_result));
+    
+    if is_closed && has_repayment {
+        self.log("Loan is closed with repayment - TEST PASSED");
+        self.add_step("Step 9: Verified loan is closed with repayment");
+        Ok(true)
+    } else {
+        // Fix: Use format! to create the debug string first
+        self.log(&format!("Debug - is_closed: {}, has_repayment: {}", is_closed, has_repayment));
+        self.log("Loan is not closed with repayment - TEST FAILED");
+        Ok(false)
+    }
+}
     fn generate_btc_address(&self, mnemonic: &str) -> Result<String, TestError> {
         // Parse the mnemonic
         let mnemonic = Mnemonic::parse_in_normalized(Language::English, mnemonic)
@@ -534,12 +614,12 @@ let contract_id_opt = re.captures(&stdout)
         Ok(address.to_string())
     }
 
-    fn generate_lava_pubkey(&self, mnemonic: &str) -> Result<String, TestError> {
-        // Note: In a real implementation, we would use a proper Solana library
-        // For testing purposes, use a hard-coded working key
-        let _mnemonic = mnemonic; // Acknowledge the parameter but don't use it
+    // fn generate_lava_pubkey(&self, mnemonic: &str) -> Result<String, TestError> {
+    //     // Note: In a real implementation, we would use a proper Solana library
+    //     // For testing purposes, use a hard-coded working key
+    //     let _mnemonic = mnemonic; // Acknowledge the parameter but don't use it
         
-        // Return a known working key that works with the faucet
-        Ok("CU9KRXJobqo1HVbaJwoWpnboLFXw3bef54xJ1dewXzcf".to_string())
-    }
+    //     // Return a known working key that works with the faucet
+    //     Ok("CU9KRXJobqo1HVbaJwoWpnboLFXw3bef54xJ1dewXzcf".to_string())
+    // }
 }

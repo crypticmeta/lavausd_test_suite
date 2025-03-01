@@ -41,6 +41,7 @@ async fn health_check() -> impl Responder {
     HttpResponse::Ok().json(response)
 }
 
+
 async fn run_test(
     options: web::Json<TestOptions>,
     data: web::Data<AppState>
@@ -51,42 +52,37 @@ async fn run_test(
     if let Some(mnemonic) = &options.mnemonic {
         test_suite = test_suite.with_mnemonic(mnemonic.clone());
     }
+ 
     
-    // Run the test
-    match test_suite.run().await {
-        Ok(result) => {
-            let success = result.success;
-            let db_result = data.db.lock().unwrap().save_result(&result);
-            
-            if let Err(e) = db_result {
-                eprintln!("Failed to save test result to database: {}", e);
-            }
-            
-            let response = ApiResponse {
-                success,
-                message: if success {
-                    "Test completed successfully".to_string()
-                } else {
-                    "Test failed".to_string()
-                },
-                data: Some(result),
-                timestamp: Utc::now().to_rfc3339(),
-            };
-            
-            HttpResponse::Ok().json(response)
-        }
-        Err(e) => {
-            let response = ApiResponse {
-                success: false,
-                message: format!("Test error: {}", e),
-                data: None::<()>,
-                timestamp: Utc::now().to_rfc3339(),
-            };
-            HttpResponse::InternalServerError().json(response)
-        }
+    // Run the test and get the result - always returns a TestResult now
+    let result = test_suite.run().await;
+    let success = result.success;
+    
+    // Save the result to the database - ALL results are saved now
+    let db_result = data.db.lock().unwrap().save_result(&result);
+    if let Err(e) = db_result {
+        eprintln!("Failed to save test result to database: {}", e);
+    }
+    
+    // Create and return the response
+    let response = ApiResponse {
+        success,
+        message: if success {
+            "Test completed successfully".to_string()
+        } else {
+            format!("Test failed: {}", result.details)
+        },
+        data: Some(result),
+        timestamp: Utc::now().to_rfc3339(),
+    };
+    
+    // Return appropriate HTTP status based on test success
+    if success {
+        HttpResponse::Ok().json(response)
+    } else {
+        HttpResponse::Ok().json(response) // Still return 200 OK, but with success: false
     }
 }
-
 async fn get_all_results(data: web::Data<AppState>) -> impl Responder {
     match data.db.lock().unwrap().get_all_results() {
         Ok(results) => {
