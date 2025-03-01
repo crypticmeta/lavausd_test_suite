@@ -110,8 +110,7 @@ impl TestSuite {
         self.log(&format!("✓ {}", step_name));
     }
 
-
- pub async fn run(&mut self) -> TestResult {
+pub async fn run(&mut self) -> TestResult {
     self.log("Starting Borrower CLI Test Suite");
     
     // Step 1: Generate mnemonic and addresses
@@ -120,13 +119,11 @@ impl TestSuite {
         return self.create_result(false, format!("Error in step 1: {}", e));
     }
     
-    
     // Step 2: Call testnet faucet
     if let Err(e) = self.step2_call_faucet().await {
         self.log(&format!("Error in step 2: {}", e));
         return self.create_result(false, format!("Error in step 2: {}", e));
     }
-    
     
     // Step 3: Check CLI
     if let Err(e) = self.step3_check_cli() {
@@ -134,24 +131,71 @@ impl TestSuite {
         return self.create_result(false, format!("Error in step 3: {}", e));
     }
     
+    // Step 4: Create a loan with retries
+    let max_attempts = 3;
+    let mut loan_created = false;
     
-    // Step 4: Create a loan
-    self.log("Creating a loan");
-    if let Err(e) = self.step4_create_loan() {
-        self.log(&format!("Error in step 4: {}", e));
-        return self.create_result(false, format!("Error in step 4: {}", e));
+    for attempt in 1..=max_attempts {
+        self.log(&format!("Creating a loan (attempt {}/{})", attempt, max_attempts));
+        
+        match self.step4_create_loan() {
+            Ok(_) => {
+                self.log("Loan creation successful");
+                loan_created = true;
+                break;
+            },
+            Err(e) => {
+                self.log(&format!("Error in loan creation attempt {}: {}", attempt, e));
+                
+                if attempt < max_attempts {
+                    self.log("Waiting 30 seconds before retrying loan creation...");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+                } else {
+                    self.log("All loan creation attempts failed");
+                    return self.create_result(false, format!("Error in step 4 after {} attempts: {}", max_attempts, e));
+                }
+            }
+        }
     }
     
-    self.log("Waiting 1 minutes before proceeding to the next step...");
+    if !loan_created {
+        return self.create_result(false, "Failed to create loan after all retry attempts".to_string());
+    }
+    
+    self.log("Waiting 1 minute before proceeding to the next step...");
     tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
     
-    // Step 6: Repay the loan
-    if let Err(e) = self.step6_repay_loan() {
-        self.log(&format!("Error in step 6: {}", e));
-        return self.create_result(false, format!("Error in step 6: {}", e));
+    // Step 6: Repay the loan with retries
+    let mut loan_repaid = false;
+    
+    for attempt in 1..=max_attempts {
+        self.log(&format!("Repaying the loan (attempt {}/{})", attempt, max_attempts));
+        
+        match self.step6_repay_loan() {
+            Ok(_) => {
+                self.log("Loan repayment successful");
+                loan_repaid = true;
+                break;
+            },
+            Err(e) => {
+                self.log(&format!("Error in loan repayment attempt {}: {}", attempt, e));
+                
+                if attempt < max_attempts {
+                    self.log("Waiting 30 seconds before retrying loan repayment...");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(30)).await;
+                } else {
+                    self.log("All loan repayment attempts failed");
+                    return self.create_result(false, format!("Error in step 6 after {} attempts: {}", max_attempts, e));
+                }
+            }
+        }
     }
     
-    self.log("Waiting 1 minutes before proceeding to the next step...");
+    if !loan_repaid {
+        return self.create_result(false, "Failed to repay loan after all retry attempts".to_string());
+    }
+    
+    self.log("Waiting 1 minute before proceeding to the next step...");
     tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
     
     // Step 7: Get contract details
@@ -160,8 +204,7 @@ impl TestSuite {
         return self.create_result(false, format!("Error in step 7: {}", e));
     }
     
-    
-    // Step 8 
+    // Step 8 & 9: Check the JSON file
     let success = match self.step8_check_json() {
         Ok(success) => success,
         Err(e) => {
@@ -180,7 +223,6 @@ impl TestSuite {
         }
     )
 }
-
 
 // Helper method to log commands before execution
     fn log_command(&mut self, cmd: &Command) -> Result<(), TestError> {

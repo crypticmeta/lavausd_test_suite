@@ -1,0 +1,269 @@
+{
+  "Closed": {
+    "collateral_return_tx": {
+      "input": [
+        {
+          "previous_output": "c22014601e2a4e355dcb8fee304b25dd8f657bfe256294d52bc0ca6988604f0d:0",
+          "script_sig": "",
+          "sequence": 4294967295,
+          "witness": [
+            "3618bdb2e58dab40a8598d117d3430eb53610859beb4406ee80b04be0f31b7abde2915bd2f96381c0dbf190ef4ac9c85612ecd10a8902d1edb118adab01a3eae",
+            "01",
+            "3044022067bd1f2a278dafcf47a9bf3635301a8f7bf8a3079c2716cd092490994f6ac3f302207c094b54393704d57431b2f62990dc199b22a16dfbaa84101fe1b19a0698ef2901",
+            "210388129457b9bb1656f02388a838e9fcc374b6b9611dd25d10d2f9d79408263404ad6382014088a8200625ddf88ef00603b15eaf3ccef72e1d2de7ba1a0d576621874a96761ac9a97887672103c072d1a7484b69f0b7498b8c26c2c5a29940b2fc5d20fe09187dea8e2464303aac68"
+          ]
+        }
+      ],
+      "lock_time": 0,
+      "output": [
+        {
+          "script_pubkey": "00145cb08edb4a1286e2c15df522ed8f6099bf393135",
+          "value": 5393
+        }
+      ],
+      "version": 2
+    },
+    "earnings": null,
+    "end_date": "2025-03-01",
+    "info": {
+      "initialization_preimage": [
+        120,
+        94,
+        13,
+        51,
+        184,
+        78,
+        249,
+        95,
+        155,
+        64,
+        180,
+        47,
+        5,
+        87,
+        209,
+        165,
+        202,
+        203,
+        183,
+        41,
+        188,
+        62,
+        183,
+        160,
+        70,
+        54,
+        63,
+        132,
+        203,
+        231,
+        219,
+        89,
+        173,
+        186,
+        0,
+        159,
+        73,
+        95,
+        193,
+        126,
+        32,
+        51,
+        248,
+        61,
+        243,
+        129,
+        122,
+        173,
+        118,
+        184,
+        218,
+        44,
+        85,
+        211,
+        241,
+        56,
+        211,
+        7,
+        219,
+        179,
+        18,
+        129,
+        249,
+        106
+      ],
+      "lender_rpc_server_endpoint": "https://loans-lender-rpc-6468f478-8011-702b-f4b9-6782840baa40.testnet.lava.xyz/",
+      "loan_capital_asset": "solana-lava-usd",
+      "oracle_configs": [
+        {
+          "pubkey": "93c017c25e7c9f9f58fe98b961b82bbcf23839eb4b280bdec1f9a5837abf4e34"
+        }
+      ],
+      "salt": 0,
+      "unsigned_contract": {
+        "config": {
+          "attested_price_bucket_size": 100,
+          "borrower_details": {
+            "change_script_pubkey": "00145cb08edb4a1286e2c15df522ed8f6099bf393135",
+            "fund_pubkey": "0388129457b9bb1656f02388a838e9fcc374b6b9611dd25d10d2f9d79408263404",
+            "loan_capital_address": "9mDV9rdUpAwkpYoqkisKyNBU9PihbJdQDfqXE6Tkb9JF",
+            "payout_script_pubkey": "00145cb08edb4a1286e2c15df522ed8f6099bf393135"
+          },
+          "escrow_fund_txid": "060c37a0ed280fdbdf995056129ba71ce525e44eab702b270f07e9c72ea8cb3e",
+          "escrow_fund_vout": 1,
+          "fee_rate_per_vb_pp": 101,
+          "initialization_hashvalue": "ff8c083f65c3024f4410abca477f2761388e0917aed7b437d5f021a3d0a86e4c",
+          "lender_details": {
+            "fund_pubkey": "03c072d1a7484b69f0b7498b8c26c2c5a29940b2fc5d20fe09187dea8e2464303a",
+            "loan_capital_address": "4wyegYQCtTXeDUFucmuFHabkjRB1nhRJJ85huNMt7LUb",
+            "payout_script_pubkey": "00142182188f8815532ba0af21d9540b817a2dd57930"
+          },
+          "liquidation_ltv_bp": 9300,
+          "loan_details": {
+            "collateral_amt_sat": 4730,
+            "escrow_timelock_days": 2,
+            "interest_rate_bp": 1500,
+            "loan_borrower_refund_days": 14,
+            "loan_capital_amt": {
+              "amount": 2000000,
+              "asset": "solana-lava-usd"
+            },
+            "loan_expiry_days": 4,
+            "loan_lender_refund_days": 7,
+            "start_date_time": "2025-03-01 13:20:57.0 +00:00:00"
+          },
+          "network": "signet",
+          "oracle_error_tolerance": [
+            2,
+            4
+          ],
+          "oracle_threshold": 1,
+          "protocol_fee_options": {
+            "interest_fee_address": "tb1qlq2qssxkau486cl8f85upk8uxkjee6xrjh7kpx",
+            "loan_capital_address": "CCusg1by2S33eufqzEEetMA9YquACxx4f51sizWRJN7g"
+          },
+          "repayment_hashvalue": "0625ddf88ef00603b15eaf3ccef72e1d2de7ba1a0d576621874a96761ac9a978"
+        },
+        "contract_funding_tx": {
+          "input": [
+            {
+              "previous_output": "060c37a0ed280fdbdf995056129ba71ce525e44eab702b270f07e9c72ea8cb3e:1",
+              "script_sig": "",
+              "sequence": 1,
+              "witness": []
+            }
+          ],
+          "lock_time": 0,
+          "output": [
+            {
+              "script_pubkey": "0020ce3729c05e84a4accfb440a48484a5fe2d8eddac1dc9e68cb2b13c6ffefbdd1f",
+              "value": 5570
+            }
+          ],
+          "version": 2
+        },
+        "contract_redeemscript": "210388129457b9bb1656f02388a838e9fcc374b6b9611dd25d10d2f9d79408263404ad6382014088a8200625ddf88ef00603b15eaf3ccef72e1d2de7ba1a0d576621874a96761ac9a97887672103c072d1a7484b69f0b7498b8c26c2c5a29940b2fc5d20fe09187dea8e2464303aac68",
+        "escrow_redeemscript": "210388129457b9bb1656f02388a838e9fcc374b6b9611dd25d10d2f9d7940826340474528763ad03510140b267abad82014088a820ff8c083f65c3024f4410abca477f2761388e0917aed7b437d5f021a3d0a86e4c882103c072d1a7484b69f0b7498b8c26c2c5a29940b2fc5d20fe09187dea8e2464303aac68",
+        "escrow_timeout_tx": {
+          "input": [
+            {
+              "previous_output": "060c37a0ed280fdbdf995056129ba71ce525e44eab702b270f07e9c72ea8cb3e:1",
+              "script_sig": "",
+              "sequence": 4194641,
+              "witness": []
+            }
+          ],
+          "lock_time": 0,
+          "output": [
+            {
+              "script_pubkey": "00145cb08edb4a1286e2c15df522ed8f6099bf393135",
+              "value": 5616
+            }
+          ],
+          "version": 2
+        },
+        "fees": {
+          "contract_fund": 178,
+          "escrow_timeout": 132,
+          "expiration": 840,
+          "liquidation": 179,
+          "refund": 148,
+          "repayment": 177
+        },
+        "refund_borrower_cet": {
+          "input": [
+            {
+              "previous_output": "c22014601e2a4e355dcb8fee304b25dd8f657bfe256294d52bc0ca6988604f0d:0",
+              "script_sig": "",
+              "sequence": 4294967294,
+              "witness": []
+            }
+          ],
+          "lock_time": 1742390457,
+          "output": [
+            {
+              "script_pubkey": "00145cb08edb4a1286e2c15df522ed8f6099bf393135",
+              "value": 5422
+            }
+          ],
+          "version": 2
+        },
+        "refund_lender_cet": {
+          "input": [
+            {
+              "previous_output": "c22014601e2a4e355dcb8fee304b25dd8f657bfe256294d52bc0ca6988604f0d:0",
+              "script_sig": "",
+              "sequence": 4294967294,
+              "witness": []
+            }
+          ],
+          "lock_time": 1741785657,
+          "output": [
+            {
+              "script_pubkey": "00142182188f8815532ba0af21d9540b817a2dd57930",
+              "value": 5422
+            }
+          ],
+          "version": 2
+        },
+        "repayment_cet": {
+          "input": [
+            {
+              "previous_output": "c22014601e2a4e355dcb8fee304b25dd8f657bfe256294d52bc0ca6988604f0d:0",
+              "script_sig": "",
+              "sequence": 4294967295,
+              "witness": []
+            }
+          ],
+          "lock_time": 0,
+          "output": [
+            {
+              "script_pubkey": "00145cb08edb4a1286e2c15df522ed8f6099bf393135",
+              "value": 5393
+            }
+          ],
+          "version": 2
+        }
+      },
+      "version": 12884901888
+    },
+    "loan_capital_contract_funding_txid": {
+      "Solana": "5A7RrcZYdVPyUbLmYf8asQ7obtjuxJzUiUTKShmNxGcGeTvLr3pUCy8U3CGMcnnZHrfN78ZRrYx23VSwoe6qAd1o"
+    },
+    "loan_capital_earnings_asset": null,
+    "loan_capital_loan_acceptance_txid": {
+      "Solana": "4VmpLq8iCmH9omqnPV1qSepaAfzHA8aso8p3ED94d7z3fec9da2gyazpsUU3e7AgG5YgxjjKrwMaPwq1exP1nFzP"
+    },
+    "outcome": {
+      "repayment": {
+        "collateral_repayment_txid": "52df897a12248bc6f7bb1081a9b8dfaaee0e6a6954649b1fe325c4509980e660",
+        "loan_capital_repayment_acceptance_txid": {
+          "Solana": "4VmpLq8iCmH9omqnPV1qSepaAfzHA8aso8p3ED94d7z3fec9da2gyazpsUU3e7AgG5YgxjjKrwMaPwq1exP1nFzP"
+        },
+        "loan_capital_repayment_txid": {
+          "Solana": "5A7RrcZYdVPyUbLmYf8asQ7obtjuxJzUiUTKShmNxGcGeTvLr3pUCy8U3CGMcnnZHrfN78ZRrYx23VSwoe6qAd1o"
+        }
+      }
+    }
+  }
+}
